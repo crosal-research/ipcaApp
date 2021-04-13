@@ -1,0 +1,7 @@
+*README*
+
+This project sets the operational for: a) fetching Consumer Price
+indexes from IBGE, b) saving it onto a database, and c) calculating
+the relevant cores measures, also saving onto the database. The
+database is then accessed through clients over and API.
+

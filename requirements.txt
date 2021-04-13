@@ -1,0 +1,7 @@
+fastapi
+ponyorm
+pandas
+python-multipart
+pendulum
+bs4
+requests

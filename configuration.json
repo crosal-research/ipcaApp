@@ -1,0 +1,16 @@
+{
+    "DB": {
+        "provider": "sqlite",
+	"host": "0.0.0.0",
+	"port": 5433,
+	"user": "postgres",
+        "password": "admin",
+        "database": "inflation_db",
+        "path": "./storage/ipca.sqlite"
+    },
+
+    "Search": 
+    {
+        "data": "./DB/data/fields.json"
+        }
+}

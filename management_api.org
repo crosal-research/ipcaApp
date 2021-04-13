@@ -1,0 +1,179 @@
+#+author: João Maurício Rosal
+#+date: 23/03/2021
+#+PROPERTY: Method_ALL GET POST PUT DELETE
+#+PROPERTY: Object_ALL SERIES TABLES SEARCHES
+
+This file is to manage and test the api within emacs in a
+plug-and-play manner.
+
+
+* SERIES
+  :PROPERTIES:
+  :Object:   SERIES
+  :END:
+  
+** GET series
+   :PROPERTIES:
+   :Method:   GET
+   :END:
+   
+#+begin_src http :pretty
+GET http://127.0.0.1:8000/inflation/api/v0.1/?tickers=ipca.core_aparadas_suavizadas&date=2021-01-01
+#+end_src
+
+
+** POST observations
+   :PROPERTIES:
+   :Method:   POST
+   :END:
+   
+   
+#+header: :var indicator="IPCA" date="2021-03-01"
+#+begin_src http
+POST http://127.0.0.1:8000/inflation/api/v0.1/
+Content-Type: application/json
+
+{
+	"date": "${date}",
+	"indicator": "${indicator}"
+
+}
+#+end_src
+
+#+RESULTS:
+: HTTP/1.1 200 OK
+: date: Fri, 09 Apr 2021 12:09:50 GMT
+: server: uvicorn
+: content-length: 39
+: content-type: application/json
+: 
+: "IPCA at 2021-03-01 successfully added"
+
+
+
+
+
+
+** DELETE observations
+   :PROPERTIES:
+   :Method:   DELETE
+   :END:
+   
+
+#+header: :var indicator="IPCA" date="2021-02-01"
+#+begin_src http
+DELETE http://127.0.0.1:8000/inflation/api/v0.1/
+Content-Type: application/json
+
+{
+	"indicator": "${indicator}",
+	"date": "${date}"
+}
+#+end_src
+
+
+
+
+* TABLES
+  :PROPERTIES:
+  :Object:   TABLES
+  :END:
+  
+** GET TABLES
+   :PROPERTIES:
+   :Method:   GET
+   :END:
+   
+#+begin_src http :pretty
+GET http://127.0.0.1:8000/inflation/api/v0.1/tables?ticker=tbl.ipca_grupo
+#+end_src
+
+
+** POST Tables
+   :PROPERTIES:
+   :Method:   POST
+   :END:
+   
+#+begin_src http
+POST http://206.189.232.141:5000/inflation/api/v0.1/tables
+Content-Type: application/json
+
+{
+	"ticker": "tbl.ipca15_cores",
+	"description": "Table a ser enviada para Broadcast",
+	"series": [
+	"ipca15.core_exo", 
+	"ipca15.core_ex1", 
+	"ipca15.core_ex2",
+	"ipca15.core_ex3",
+	"ipca15.servicos",
+	"ipca15.core_servicos",
+	"ipca15.core_monitorados",
+	"ipca15.core_livres",
+	"ipca15.core_duraveis",
+	"ipca15.core_tradables",
+	"ipca15.core_aparadas",
+	"ipca15.core_aparadas_suavizadas",
+	"ipca15.core_dp",
+	"ipca15.core_p55"]
+}
+#+end_src
+
+
+** PUT observations
+   :PROPERTIES:
+   :Method:   PUT
+   :END:
+   
+#+begin_src http
+PUT http://206.189.232.141:5000/inflation/api/v0.1/tables
+Content-Type: application/json
+
+{
+	"ticker": "tbl.ipca_cores",
+	"series": ["ipca.core_exo",
+		   "ipca.core_ex1", 
+		   "ipca.core_ex2",
+		   "ipca.core_ex3", 
+		   "ipca.core_servicos"]
+}
+#+end_src
+
+
+
+
+** DELETE observations
+   :PROPERTIES:
+   :Method:   DELETE
+   :END:
+   
+#+header: :var ticker="tbl.ipca_cores"
+#+begin_src http
+DELETE http://206.189.232.141:5000/inflation/api/v0.1/tables
+Content-Type: application/json
+
+{
+	"ticker": "tbl.ipca15_cores"
+}
+#+end_src
+
+
+* SEARCH
+  :PROPERTIES:
+  :Object:   SEARCHES
+  :END:
+
+** GET SEARCH
+   :PROPERTIES:
+   :Method:   GET
+   :END:
+
+   #+begin_src http :pretty
+   GET http://127.0.0.1:8983/solr/ipca/select?q=description:gasolina&wt=json
+   #+end_src
+
+
+
+
+
+   
