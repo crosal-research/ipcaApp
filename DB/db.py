@@ -1,6 +1,6 @@
 # import from system
 from datetime import datetime as dt
-import json
+import json, os
 
 # import from packages
 from pony  import orm
@@ -34,8 +34,9 @@ with open("./configuration.json") as fp:
     config = json.load(fp)
 
 if config["DB"]["provider"] == 'sqlite':
-    db.bind(provider=config["DB"]["provider"], filename= dir + 'ipca.sqlite', create_db=True)    
-
+    dr = os.path.abspath(os.path.curdir)
+    db.bind(provider=config["DB"]["provider"], 
+            filename= dr + "/DB/storage/" + 'ipca.sqlite', create_db=True)    
 else:
     db.bind(provider=config["DB"]["provider"],
             host=config["DB"]["host"],

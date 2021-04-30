@@ -1,7 +1,8 @@
 fastapi
-ponyorm
+pony
 pandas
 python-multipart
 pendulum
 bs4
 requests
+psycopg2

@@ -59,17 +59,21 @@ async def index():
 # fetch resources
 @app.get("/inflation/api/v0.1/")
 async def get_series(tickers: List[str]=Query(..., regex="^.+\..+"),
-                     date:datetime.date=Query(None), #, regex="^\d{4}-\d{2}-\d{2}$"), 
+                     date_ini:datetime.date=Query(None), #, regex="^\d{4}-\d{2}-\d{2}$"), 
+                     date_end:datetime.date=Query(None), #, regex="^\d{4}-\d{2}-\d{2}$"), 
                      form:str="csv"):
-    """
-    Get observations for a List of tickers from database, date gives
-    the head lower limit for the for the time seires and from gives
-    the string format (csv or json)
+    """Get observations for a List of tickers from database or for table,
+    date gives the head lower limit for the for the time seires and
+    from gives the string format (csv or json)
     """
     if (len(tickers) == 1 and tickers[0].split(".")[0] == "tbl"):
-        df = fetch_by_ticker(fetch_tbl(tickers[0])["series"], date=date.strftime("%Y-%m-%d") if date else None)
+        df = fetch_by_ticker(fetch_tbl(tickers[0])["series"], 
+                             date_ini= date_ini.isoformat() if date_ini else None, 
+                             date_end= date_end.isoformat()  if date_end else None)
     else:
-        df = fetch_by_ticker(tickers, date=date.strftime("%Y-%m-%d" if date else None))
+        df = fetch_by_ticker(tickers, 
+                             date_ini=date_ini.isoformat() if date_ini else None,
+                             date_end=date_end.isoforma() if date_end else None)
     if form == "csv":
         return Response(df.to_csv(), media_type="application/text")
     return Response(df.to_json(), media_type="application/text")

@@ -2,7 +2,6 @@
 import re, json
 from typing import Optional, List
 from datetime import datetime as dt
-from functools import reduce
 
 # import from packages
 import pandas as pd
@@ -11,6 +10,11 @@ from pony import orm
 #import from app
 from DB.db import db
 from DB.core_definitions import cores
+
+
+# Constants
+DATE_INI = "1900-01-01" # good for when no initial date is provided
+DATE_END = "2100-01-01" # good for when no final  date is provided
 
 # series
 # upserts 
@@ -58,7 +62,8 @@ def add_obs(ticker:str, data:dt, value:Optional[float]) -> None:
 @orm.db_session
 def fetch_info_by_ticker(ticker:str) -> pd.DataFrame:
     """
-    Fetch the information for a particular item
+    Fetch the information for a particular series defined by the
+    its ticker
     """
     obs = orm.select((s.ticker, 
                       s.description, 
@@ -72,54 +77,50 @@ def fetch_info_by_ticker(ticker:str) -> pd.DataFrame:
                                  "kind", 
                                  'indicator'])
 
-
 @orm.db_session
-def fetch_all(kind="VARIACAO", indicator="IPCA", date:Optional[str] = None):
+def fetch_all(kind="VARIACAO", indicator="IPCA", 
+              date_ini:Optional[str] = None, date_end:Optional[str]=None):
+    """
+    fetch all the series for some kind and some indicator. 
+    """
+    date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
+    date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
 
-    date = dt.fromisoformat(date) if date is not None else date
-    
-    if date is not None:
-        dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation
-                        if (o.series.kind==kind and 
-                            o.series.indicator==indicator and 
-                            o.data == date and 
-                            o.series.group != "NUCLEO"))
-    else:
-        dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation
-                        if (o.series.kind==kind and 
-                            o.series.indicator==ticker and 
-                            o.series.group != "NUCLEO"))
+    dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation
+                    if (o.series.kind==kind and 
+                        o.series.indicator==indicator and 
+                        o.data >= date_ini and 
+                        o.data <= date_end and 
+                        o.series.group != "NUCLEO"))
     return pd.DataFrame(dd, columns=["date", "change", 
                                      "ticker"]).set_index(["date"]).pivot(values="change", 
-                                                                                 columns="ticker")
+                                                                          columns="ticker")
 
 
 @orm.db_session
 def fetch_group(group="GRUPO", kind="VARIACAO", indicator="IPCA",
-                ticker=False, date:Optional[str] = None) -> pd.DataFrame:
+                ticker=False, date_ini:Optional[str] = None, 
+                date_end:Optional[str] = None) -> pd.DataFrame:
     """
     group = [GERAL, GRUPO, SUBGRUPO, ITEM, SUBITEM, NUCLEO]
     kind = [VARIACA0, PESO]
     indicator =[IPCA, IPCA15]
-    tickers = Bool is headers should be tickers 
-    date = str 
+    tickers = Boolean is headers should be tickers 
+    date = str (ex: 2020-01-01)
+    date_end = str (ex: 2021-01-01)
     """
-    date = dt.fromisoformat(date) if date is not None else date
+    date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
+    date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
     Ugroup = group.upper()
     Uindicator = indicator.upper()
     
     if not ticker:
-        if date is not None:
-            dd = orm.select((o.data, o.value, o.series.description) for o in db.Observation
-                            if (o.series.group==Ugroup and 
-                                o.series.kind==kind and 
-                                o.series.indicator==Uindicator and 
-                                o.data == date))
-        else:
-            dd = orm.select((o.data, o.value, o.series.description) for o in db.Observation
-                            if (o.series.group==Ugroup and 
-                                o.series.kind==kind and 
-                                o.series.indicator==Uindicator))
+        dd = orm.select((o.data, o.value, o.series.description) for o in db.Observation
+                    if (o.series.group==Ugroup and 
+                        o.series.kind==kind and 
+                        o.series.indicator==Uindicator and 
+                        o.data >= date_ini and 
+                        o.data <= date_end))
         df = pd.DataFrame(dd, columns=["date", "change", 
                                        "description"]).set_index(["date"]).pivot(values="change", 
                                                                                  columns="description")
@@ -130,39 +131,34 @@ def fetch_group(group="GRUPO", kind="VARIACAO", indicator="IPCA",
             df.columns = ["INDICE GERAL"]
         return df    
     else:
-        if date is not None:
-            dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation 
+        dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation 
                             if (o.series.group==Ugroup and 
                                 o.series.kind==kind and 
                                 o.series.indicator==Uindicator and 
-                                o.data == date))
-        else:
-            dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation 
-                            if (o.series.group==Ugroup and 
-                                o.series.kind==kind and 
-                                o.series.indicator==Uindicator))
+                                o.data >= date_ini and 
+                                o.data <= date_end))
         return pd.DataFrame(dd, columns=["date", "change", 
                                          "ticker"]).set_index(["date"]).pivot(values="change", 
                                                                                  columns="ticker")
 
 
 @orm.db_session
-def fetch_by_ticker(tickers: List[str], date: Optional[str]=None) -> pd.DataFrame:
+def fetch_by_ticker(tickers: List[str], 
+                    date_ini: Optional[str]=None, 
+                    date_end: Optional[str]=None) -> pd.DataFrame:
     """
     index = list of indexes
     kind = [VARIACA0, PESO]
     indicator =[IPCA, IPCA15]
     """
     Utickers = [tck.upper() for tck in tickers]
-    if date is None:
-        print("Is none")
-        obs = orm.select((o.data, o.value, o.series.ticker)
-                             for o in db.Observation if o.series.ticker in Utickers)
-    else:
-        dat = dt.fromisoformat(date)
-        obs = orm.select((o.data, o.value, o.series.ticker)
-                         for o in db.Observation 
-                         if ((o.series.ticker in Utickers) and (o.data >= dat)))
+    date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
+    date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
+    obs = orm.select((o.data, o.value, o.series.ticker)
+                     for o in db.Observation 
+                     if ((o.series.ticker in Utickers) and 
+                         (o.data >= date_ini) and 
+                         (o.data <= date_end)))
     df = pd.DataFrame(data=obs, 
                       columns=["date", 
                                "changes", 

@@ -1,11 +1,10 @@
 #! /usr/bin/
-
 date_initial="2012-01-01"    # initial date
-date_final="2021-02-01"      # final date
+date_final="2021-03-01"      # final date
 
-add inflation series
+# add inflation series
 for inf in "IPCA" "IPCA15"; do
-    python3 -m DB.observations $inf $date_final $date_initial
+    python3 -m DB.loaders.observations $inf $date_final $date_initial
 done
 
 # add core series

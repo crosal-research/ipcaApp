@@ -1,6 +1,6 @@
 # import from system
 from concurrent.futures import ThreadPoolExecutor as executor
-import re
+import re, time
 from datetime import datetime as dt
 
 import json, time
@@ -37,7 +37,7 @@ def build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     return f"http://api.sidra.ibge.gov.br/values/t/{tck_new}/n1/1/f/a"
 
 
-def process(url:str) -> pd.DataFrame:
+def process(url:str) -> Optional[pd.DataFrame]:
     """
     From a specific url to acess IBGE's api, fetch the data in a
     dictionary form, and return a dataframe with the necessary information
@@ -47,7 +47,19 @@ def process(url:str) -> pd.DataFrame:
     - index = [1, 2, ...]
     - columns = [ticker, data, value]
     """
-    resp = requests.get(url, stream=True)
+    l = 20
+    attempt =  0
+    while (attempt <= l):
+        try:
+            resp = requests.get(url, stream=True)
+            break
+        except:
+            print("Data no yet available")
+            time.sleep(0.5)
+            attemp += 1
+            if attemp > l:
+                return None
+
     url = resp.url
     tbl = re.search(r"values/t/(\d{4})/", url).group(1)
     indic = {"7060":"IPCA", "1419":"IPCA", "7062":"IPCA15", "1705":"IPCA15"}[tbl]
@@ -81,14 +93,12 @@ def add_data_frame(df: pd.DataFrame) -> None:
     takes a data frame with the information about observations on a 
     particular indicator {IPCA, IPCA15} and adds to the database.
     """
-    global input
     for i in range(0, df.shape[0]):
         try:
             input = df.iloc[i,:].values
             add_obs(input[0], input[1].to_pydatetime(), float(input[2]))
         except:
             print(f"failed to add series {df.iloc[i,:].values[0]}")
-
 
 
 def add_observations(cpi:str, end:str, ini: Optional[str]=None) -> None:
