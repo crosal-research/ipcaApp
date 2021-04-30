@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from DB.transactions import fetch_by_ticker, delete_observations
 from DB.transactions import fetch_tbl, delete_tbl, create_tbl, modify_tbl
 from DB.transactions import fetch_all_series
-from DB.observations import add_observations
+from DB.loaders.observations import add_observations
 from DB.nucleos_calculos import add_cores
 
 app = FastAPI()
