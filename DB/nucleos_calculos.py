@@ -177,7 +177,6 @@ def add_cores(cpi:str, end:str, ini: Optional[str]=None) -> None:
     """"
     Add to the database 
     """
-    global dvs, dps, month
     cpi = cpi.upper()
     dvi = fetch_group(group="ITEM", ticker=True, indicator=cpi) # all items for all dates
     dpi = fetch_group(group="ITEM", kind= "PESO", ticker=True, indicator=cpi) # all item for all dates
@@ -194,12 +193,13 @@ def add_cores(cpi:str, end:str, ini: Optional[str]=None) -> None:
             ini = pendulum.datetime(2015,1,1)
     period = pendulum.period(ini, end)
     months = [p.format("YYYY-MM-DD") for p in period.range('months')]
-
     for month in months:
-        dvs = fetch_all(kind="VARIACAO", date=month, indicator=cpi) # needs to fetch all indices for addhoc
-        dps = fetch_all(kind= "PESO", date=month, indicator=cpi) # needs to fetch all indices for addhoc
-        dvsub = fetch_group(group="SUBITEM", kind="VARIACAO", date=month, indicator=cpi, ticker=True) # needs to fetch all indices
-        dpsub = fetch_group(group="SUBITEM", kind="PESO", date=month, indicator=cpi, ticker=True) # needs to fetch all indices
+        dvs = fetch_all(kind="VARIACAO", indicator=cpi, date_ini=month, date_end=month) # needs to fetch all indices for addhoc
+        dps = fetch_all(kind= "PESO", indicator=cpi, date_ini=month, date_end=month) # needs to fetch all indices for addhoc
+        dvsub = fetch_group(group="SUBITEM", kind="VARIACAO", date_ini=month, 
+                            date_end=month, indicator=cpi, ticker=True) # needs to fetch all indices
+        dpsub = fetch_group(group="SUBITEM", kind="PESO", date_ini=month, 
+                            date_end=month, indicator=cpi, ticker=True) # needs to fetch all indices
 
         #cores
         aggr_cores = [p55(month, dvsub, dpsub),
