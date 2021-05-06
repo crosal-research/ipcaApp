@@ -1,5 +1,4 @@
 # import from system
-from concurrent.futures import ThreadPoolExecutor as executor
 import re, time
 from datetime import datetime as dt
 
@@ -25,7 +24,7 @@ data = {"IPCA":["7060/p/all/v/63,66/c315/all", # new
                   "1705/p/all/v/355,357/c315/all"]} # old
 
 
-def build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
+def _build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     """
     Form indicator {IPCA, IPCA-15}, nth-limit last observations, 
     and whether we should fetch the old or new observations of the 
@@ -37,7 +36,7 @@ def build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     return f"http://api.sidra.ibge.gov.br/values/t/{tck_new}/n1/1/f/a"
 
 
-def process(url:str) -> Optional[pd.DataFrame]:
+def _process(url:str) -> Optional[pd.DataFrame]:
     """
     From a specific url to acess IBGE's api, fetch the data in a
     dictionary form, and return a dataframe with the necessary information
@@ -84,11 +83,11 @@ def fetch(indicator:str, limit:Optional[str]=None, new:bool=True) -> pd.DataFram
     new=True is to fetch the new indicator, from valid from 2020-10. 
     Returns pandas dataframe
     """
-    url = build_url(indicator, limit=limit, new=new)
-    return process(url)
+    url = _build_url(indicator, limit=limit, new=new)
+    return _process(url)
 
 
-def add_data_frame(df: pd.DataFrame) -> None:
+def _add_data_frame(df: pd.DataFrame) -> None:
     """
     takes a data frame with the information about observations on a 
     particular indicator {IPCA, IPCA15} and adds to the database.
@@ -129,7 +128,7 @@ def add_observations(cpi:str, end:str, ini: Optional[str]=None) -> None:
                 df = fetch(cpi, limit=month, new=False)
             else:
                 df = fetch(cpi, limit=month, new=True)
-        add_data_frame(df)
+        _add_data_frame(df)
         print(f"Added for {cpi} and {month}")
 
 
