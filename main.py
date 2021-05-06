@@ -73,7 +73,7 @@ async def get_series(tickers: List[str]=Query(..., regex="^.+\..+"),
     else:
         df = fetch_by_ticker(tickers, 
                              date_ini=date_ini.isoformat() if date_ini else None,
-                             date_end=date_end.isoforma() if date_end else None)
+                             date_end=date_end.isoformat() if date_end else None)
     if form == "csv":
         return Response(df.to_csv(), media_type="application/text")
     return Response(df.to_json(), media_type="application/text")
