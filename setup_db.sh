@@ -7,15 +7,16 @@ case $1 in
 	pip3 install -r requirements.txt
 	echo "Done install requirements"
 	echo -e "-----\n"
-
 		     ;;
     "build" ) 
 	# sets up the database
 	echo "Sets up the database"
+	if ! [[ -d "./DB/storage/" ]]; then
+	    echo "creating ./DB/storage directory"
+	    sleep 1.0
+	    mkdir "./DB/storage"
+	fi
 	python3 -m DB.db
-	echo "DB setup"
-	echo -e "-----\n"
-
 	   ;;
     "series" ) echo "load prices"
 	       ;;
