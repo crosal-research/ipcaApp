@@ -5,5 +5,5 @@ python-multipart
 pendulum
 bs4
 requests
-psycopg2
-univcorn[standard]
+psycopg2-binary
+uvicorn[standard]

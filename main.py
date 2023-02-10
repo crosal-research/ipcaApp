@@ -125,7 +125,7 @@ async def create_table(table:Tabledb):
 
 
 @app.put("/inflation/api/v0.1/tables")
-async def madify_table(table:Tabledb):
+async def modify_table(table:Tabledb):
     """
     modifies a table by changing either the 
     description or the series in the table
