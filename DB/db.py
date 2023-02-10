@@ -32,17 +32,7 @@ class TableDb(db.Entity):
 # bootstrap db:
 with open("./configuration.json") as fp:
     config = json.load(fp)
-
-if config["DB"]["provider"] == 'sqlite':
-    dr = os.path.abspath(os.path.curdir)
+    dr = os.path.abspath("./")
     db.bind(provider=config["DB"]["provider"], 
-            filename= dr + "/DB/storage/" + 'ipca.sqlite', create_db=True)    
-else:
-    db.bind(provider=config["DB"]["provider"],
-            host=config["DB"]["host"],
-            port=config["DB"]["port"],
-            user=config["DB"]["user"], 
-            password=config["DB"]["password"],
-            database=config["DB"]["database"])    
-
-db.generate_mapping(create_tables=True)    
+             filename= dr + "/DB/storage/" + 'ipca.sqlite', create_db=True)    
+    db.generate_mapping(create_tables=True)    
