@@ -1,3 +1,9 @@
+############################################################
+# last update: 10/02/2023
+# needs to check whether it is adding observations properly
+############################################################
+
+
 # import from system
 import re, time
 from datetime import datetime as dt
@@ -70,7 +76,7 @@ def _process(url:str) -> Optional[pd.DataFrame]:
                   axis=1).to_frame()
     dc.columns = ["tickers"]
     dn = pd.concat([dc, df.loc[:, ['D1C', 'V']]], axis=1)
-    dn["D1C"] = pd.to_datetime(dn["D1C"], format="%Y%m")
+    dn["D1C"] = pd.to_datetime(dn["D1C"], format="%Y%m").astype(str)
     dn = dn.replace(to_replace="...", regex=False, value=pd.NA).dropna()
     dn["V"] = dn["V"].apply(lambda v: float(v))
     return dn
@@ -92,12 +98,14 @@ def _add_data_frame(df: pd.DataFrame) -> None:
     takes a data frame with the information about observations on a 
     particular indicator {IPCA, IPCA15} and adds to the database.
     """
+    global input
     for i in range(0, df.shape[0]):
         try:
             input = df.iloc[i,:].values
-            add_obs(input[0], input[1].to_pydatetime(), float(input[2]))
-        except:
+            add_obs(input[0], input[1], float(input[2])) # see where to fix date back to string as YYYY-MM-DD
+        except Exception as e:
             print(f"failed to add series {df.iloc[i,:].values[0]}")
+            print(e)
 
 
 def add_observations(cpi:str, end:str, ini: Optional[str]=None) -> None:
@@ -136,4 +144,3 @@ if __name__ == "__main__":
     import sys
     print(f"adding {sys.argv[1]} starting from {sys.argv[3]} in the DataBase")
     add_observations(sys.argv[1], sys.argv[2], sys.argv[3])
-

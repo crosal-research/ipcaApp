@@ -44,7 +44,7 @@ def add_series(ticker:str, description:str,
 
 
 @orm.db_session        
-def add_obs(ticker:str, data:dt, value:Optional[float]) -> None:
+def add_obs(ticker:str, data:str, value:Optional[float]) -> None:
     """adds a particular observation for the series given by ticker, for
     a particular data.
     """

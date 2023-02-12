@@ -18,9 +18,10 @@ class Series(db.Entity):
 
 
 class Observation(db.Entity):
-    data = orm.Required(dt)
+    data = orm.Required(str)
     series = orm.Required(Series)
     value  = orm.Optional(float)
+    orm.composite_key(data, series)
 
 
 class TableDb(db.Entity):
