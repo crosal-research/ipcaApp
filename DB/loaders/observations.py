@@ -1,15 +1,13 @@
 ############################################################
-# last update: 10/02/2023
-# needs to check whether it is adding observations properly
+# last update: 13/02/2023
 ############################################################
-
 
 # import from system
 import re, time
 
 import json, time
-from typing import Optional
-from concurrent.futures import ThreadPoolExecutor as execcutor
+from typing import Optional, List
+from concurrent.futures import ThreadPoolExecutor as Executor
 
 
 # import from packges
@@ -30,7 +28,7 @@ data = {"IPCA":["7060/p/all/v/63,66/c315/all", # new
                   "1705/p/all/v/355,357/c315/all"]} # old
 
 
-def _build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
+def _build_urls(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     """
     Form indicator {IPCA, IPCA-15}, nth-limit last observations, 
     and whether we should fetch the old or new observations of the 
@@ -39,33 +37,15 @@ def _build_url(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     ticker = data[indicator][0 if new else 1]
     tck_new = ticker if limit is None else  ticker.replace("all", 
                                                            f"{limit}", 1)
-    return f"http://api.sidra.ibge.gov.br/values/t/{tck_new}/n1/1/f/a"
+    def _urls(tck):
+        us = tck.split(',')
+        return [us[0] + us[1][2:], us[0][0:-2] + us[1]]
+
+    return [f"http://api.sidra.ibge.gov.br/values/t/{u}/n1/1/f/a" for u in _urls(tck_new)] 
 
 
-def _process(url:str) -> Optional[pd.DataFrame]:
-    """
-    From a specific url to acess IBGE's api, fetch the data in a
-    dictionary form, and return a dataframe with the necessary information
-    and filtered data.
-    output:
-    pd.DataFrameo
-    - index = [1, 2, ...]
-    - columns = [ticker, data, value]
-    """
-    l = 20
-    attempt =  0
-    while (attempt <= l):
-        try:
-            with requests.session() as session:
-                resp = session.get(url, stream=True)
-                break
-        except:
-            print("Data no yet available")
-            time.sleep(0.5)
-            attemp += 1
-            if attemp > l:
-                return None
 
+def _worker_process(resp: requests.Response) -> Optional[pd.DataFrame]:
     url = resp.url
     tbl = re.search(r"values/t/(\d{4})/", url).group(1)
     indic = {"7060":"IPCA", "1419":"IPCA", "7062":"IPCA15", "1705":"IPCA15"}[tbl]
@@ -83,6 +63,35 @@ def _process(url:str) -> Optional[pd.DataFrame]:
     return dn
 
 
+def _process(urls:List[str]) -> Optional[pd.DataFrame]:
+    """
+    From a specific url to acess IBGE's api, fetch the data in a
+    dictionary form, and return a dataframe with the necessary information
+    and filtered data.
+    output:
+    pd.DataFrameo
+    - index = [1, 2, ...]
+    - columns = [ticker, data, value]
+    """
+    l = 20
+    attempt =  0
+    while (attempt <= l):
+        try:
+            with requests.session() as session:
+                # adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
+                session.mount('https://apisidra.ibge.gov.br/', requests.adapters.HTTPAdapter())
+                with Executor(max_workers=2) as e:
+                    resps = e.map(lambda u: session.get(u, stream=True), urls)
+                dfs = [_worker_process(resp) for resp in resps]
+                return pd.concat(dfs, axis=0)
+        except:
+            print("Data not yet available")
+            time.sleep(0.5)
+            attemp += 1
+            if attemp > l:
+                return None
+
+
 def fetch(indicator:str, limit:Optional[str]=None, new:bool=True) -> pd.DataFrame:
     """
     Fetches the data for weigh and changes from the IBGE api
@@ -90,8 +99,8 @@ def fetch(indicator:str, limit:Optional[str]=None, new:bool=True) -> pd.DataFram
     new=True is to fetch the new indicator, from valid from 2020-10. 
     Returns pandas dataframe
     """
-    url = _build_url(indicator, limit=limit, new=new)
-    return _process(url)
+    urls = _build_urls(indicator, limit=limit, new=new)
+    return _process(urls)
 
 
 def _add_data_frame(df: pd.DataFrame) -> None:
@@ -99,7 +108,6 @@ def _add_data_frame(df: pd.DataFrame) -> None:
     takes a data frame with the information about observations on a 
     particular indicator {IPCA, IPCA15} and adds to the database.
     """
-    global input
     for i in range(0, df.shape[0]):
         try:
             input = df.iloc[i,:].values
@@ -145,3 +153,9 @@ if __name__ == "__main__":
     import sys
     print(f"adding {sys.argv[1]} starting from {sys.argv[3]} in the DataBase")
     add_observations(sys.argv[1], sys.argv[2], sys.argv[3])
+
+
+    # t0=time.time()
+    # dg = fetch('IPCA', limit='last', new=True)
+    # t1=time.time()
+    # print(t1-t0)
