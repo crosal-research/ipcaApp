@@ -9,7 +9,7 @@ import re, time
 
 import json, time
 from typing import Optional
-from cuncurrent.futures import executor
+from concurrent.futures import ThreadPoolExecutor as execcutor
 
 
 # import from packges
@@ -56,8 +56,9 @@ def _process(url:str) -> Optional[pd.DataFrame]:
     attempt =  0
     while (attempt <= l):
         try:
-            resp = requests.get(url, stream=True)
-            break
+            with requests.session() as session:
+                resp = session.get(url, stream=True)
+                break
         except:
             print("Data no yet available")
             time.sleep(0.5)
