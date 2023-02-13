@@ -18,8 +18,10 @@ plug-and-play manner.
    :END:
    
 #+begin_src http :pretty
-GET http://127.0.0.1:8000/inflation/api/v0.1/?tickers=ipca.core_aparadas_suavizadas&date=2021-01-01
+GET http://127.0.0.1:8000/inflation/api/v0.1/?tickers=IPCA.CORE_APARADAS_SUAVIZADAS&date=2021-01-01
 #+end_src
+
+
 
 
 ** POST observations
@@ -28,7 +30,7 @@ GET http://127.0.0.1:8000/inflation/api/v0.1/?tickers=ipca.core_aparadas_suaviza
    :END:
    
    
-#+header: :var indicator="IPCA" date="2021-03-01"
+#+header: :var indicator="IPCA" date="2023-01-01"
 #+begin_src http
 POST http://127.0.0.1:8000/inflation/api/v0.1/
 Content-Type: application/json
@@ -39,19 +41,6 @@ Content-Type: application/json
 
 }
 #+end_src
-
-#+RESULTS:
-: HTTP/1.1 200 OK
-: date: Fri, 09 Apr 2021 12:09:50 GMT
-: server: uvicorn
-: content-length: 39
-: content-type: application/json
-: 
-: "IPCA at 2021-03-01 successfully added"
-
-
-
-
 
 
 ** DELETE observations
