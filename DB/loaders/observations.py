@@ -79,7 +79,8 @@ def _process(urls:List[str]) -> Optional[pd.DataFrame]:
         try:
             with requests.session() as session:
                 # adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
-                session.mount('https://apisidra.ibge.gov.br/', requests.adapters.HTTPAdapter())
+                # session.mount('http://apisidra.ibge.gov.br/', requests.adapters.HTTPAdapter(
+                #     max_retries=2, pool_connections=4, pool_maxsize=10))
                 with Executor(max_workers=2) as e:
                     resps = e.map(lambda u: session.get(u, stream=True), urls)
                 dfs = [_worker_process(resp) for resp in resps]
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     add_observations(sys.argv[1], sys.argv[2], sys.argv[3])
 
 
-    # t0=time.time()
-    # dg = fetch('IPCA', limit='last', new=True)
-    # t1=time.time()
-    # print(t1-t0)
+    t0=time.time()
+    dg = fetch('IPCA', limit='last', new=True)
+    t1=time.time()
+    print(t1-t0)
