@@ -6,7 +6,7 @@
 import re, time
 
 import json, time
-from typing import Optional, List
+from typing import Optional, List, Dict
 from concurrent.futures import ThreadPoolExecutor as Executor
 
 
@@ -22,10 +22,10 @@ from DB.transactions import add_obs
 
 
 # information necessary to build the url to fetch the observation in block
-data = {"IPCA":["7060/p/all/v/63,66/c315/all", # new
-                "1419/p/all/v/63,66/c315/all"],# old
-        "IPCA15":["7062/p/all/v/355,357/c315/all", # new
-                  "1705/p/all/v/355,357/c315/all"]} # old
+data = {"IPCA":[["7060/periodos/all/variaveis/63", "7060/periodos/all/variaveis/66"], # new
+                ["1419/periodos/all/variaveis/63", "1419/periodos/all/variaveis/66"]],# old
+        "IPCA15":[["7062/periodos/all/variaveis/355", "7062/periodos/all/variaveis/357"], # new
+                  ["1705/periodos/all/variaveis/355", "1705/periodos/all/variaveis/357"]]} # old
 
 
 def _build_urls(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
@@ -34,33 +34,41 @@ def _build_urls(indicator:str, limit:Optional[str]=None, new:bool=True) -> str:
     and whether we should fetch the old or new observations of the 
     indicator. Returns the url for that particular request.
     """
-    ticker = data[indicator][0 if new else 1]
-    tck_new = ticker if limit is None else  ticker.replace("all", 
-                                                           f"{limit}", 1)
-    def _urls(tck):
-        us = tck.split(',')
-        return [us[0] + us[1][2:], us[0][0:-2] + us[1]]
-
-    return [f"http://api.sidra.ibge.gov.br/values/t/{u}/n1/1/f/a" for u in _urls(tck_new)] 
+    tickers = data[indicator][0 if new else 1]
 
 
+    def _urls(tck:str) -> str:
+        return tck if limit is None else tck.replace("all", 
+                                                     f"{limit}", 1)
+
+    return [f"https://servicodados.ibge.gov.br/api/v3/agregados/{_urls(u)}?localidades=N1[all]&classificacao=315[all]" for u in tickers] 
+
+
+def _parser(jresp:List[Dict], tlb) -> pd.DataFrame:
+    v = jresp['variavel']
+    i = jresp['id']
+    res = jresp['resultados']
+    data = []
+    for r in res:
+        s =[d for d in r['classificacoes'][0]['categoria'].keys()][0]
+        serie =r['series'][0]['serie']
+        dat = [s for s in serie][0]
+        values = serie[dat]
+        ticker = f"ibge.{tlb}/p/all/v/{i}/c315/{s}".upper()
+        data.append([ticker, dat, float(values) if values.isnumeric() else ''])
+
+    df = pd.DataFrame(data=data, columns = ['ticker', 'Date', 'Value'])
+    df['Date'] = pd.to_datetime(df["Date"], format="%Y%m").astype(str)
+    return df
 
 def _worker_process(resp: requests.Response) -> Optional[pd.DataFrame]:
     url = resp.url
-    tbl = re.search(r"values/t/(\d{4})/", url).group(1)
+    tbl = re.search(r"agregados/(\d{4})/", url).group(1)
     indic = {"7060":"IPCA", "1419":"IPCA", "7062":"IPCA15", "1705":"IPCA15"}[tbl]
     rp = b""
-    for line in resp.iter_lines():
-        rp = rp + line
-    df = pd.DataFrame(json.loads(rp.decode("utf-8"))[1:]).loc[:,["D1C", "D2C", "D3C",  "V"]]
-    dc = df.apply(lambda x: f"ibge.{indic}/p/all/v/{x[1]}/c315/{x[2]}".upper(), 
-                  axis=1).to_frame()
-    dc.columns = ["tickers"]
-    dn = pd.concat([dc, df.loc[:, ['D1C', 'V']]], axis=1)
-    dn["D1C"] = pd.to_datetime(dn["D1C"], format="%Y%m").astype(str)
-    dn = dn.replace(to_replace="...", regex=False, value=pd.NA).dropna()
-    dn["V"] = dn["V"].apply(lambda v: float(v))
-    return dn
+    jresp = resp.json()
+    return pd.concat([_parser(j, indic) for j in jresp])
+
 
 
 def _process(urls:List[str]) -> Optional[pd.DataFrame]:
@@ -85,7 +93,8 @@ def _process(urls:List[str]) -> Optional[pd.DataFrame]:
                     resps = e.map(lambda u: session.get(u, stream=True), urls)
                 dfs = [_worker_process(resp) for resp in resps]
                 return pd.concat(dfs, axis=0)
-        except:
+        except Exception as e:
+            print(e)
             print("Data not yet available")
             time.sleep(0.5)
             attemp += 1
