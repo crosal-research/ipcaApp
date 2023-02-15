@@ -55,11 +55,11 @@ def _parser(jresp:List[Dict], tlb) -> pd.DataFrame:
         dat = [s for s in serie][0]
         values = serie[dat]
         ticker = f"ibge.{tlb}/p/all/v/{i}/c315/{s}".upper()
-        data.append([ticker, dat, float(values) if values.isnumeric() else ''])
+        data.append([ticker, dat, values])
 
     df = pd.DataFrame(data=data, columns = ['ticker', 'Date', 'Value'])
     df['Date'] = pd.to_datetime(df["Date"], format="%Y%m").astype(str)
-    return df
+    return df.replace(to_replace="...", regex=False, value=pd.NA).dropna()
 
 def _worker_process(resp: requests.Response) -> Optional[pd.DataFrame]:
     url = resp.url
@@ -86,9 +86,9 @@ def _process(urls:List[str]) -> Optional[pd.DataFrame]:
     while (attempt <= l):
         try:
             with requests.session() as session:
-                # adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
-                # session.mount('http://apisidra.ibge.gov.br/', requests.adapters.HTTPAdapter(
-                #     max_retries=2, pool_connections=4, pool_maxsize=10))
+                adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
+                session.mount('https://', requests.adapters.HTTPAdapter(
+                    max_retries=4, pool_connections=4, pool_maxsize=10))
                 with Executor(max_workers=2) as e:
                     resps = e.map(lambda u: session.get(u, stream=True), urls)
                 dfs = [_worker_process(resp) for resp in resps]
@@ -166,6 +166,6 @@ if __name__ == "__main__":
 
 
     t0=time.time()
-    dg = fetch('IPCA', limit='last', new=True)
+    dg = fetch('IPCA', limit='202211', new=True)
     t1=time.time()
     print(t1-t0)
