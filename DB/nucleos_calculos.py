@@ -158,8 +158,8 @@ def core_dp(date, dv_:pd.DataFrame, dp_:pd.DataFrame,
     if date < "2015-01-01":
         return np.NaN
     d = dt.strptime(date, "%Y-%m-%d")
-    begin = d + pd.DateOffset(years=-4) #intial period std
-    end = d + pd.DateOffset(months=-1)  # final period for std
+    begin = dt.strftime(d + pd.DateOffset(years=-4), "%Y-%m-%d") #intial period std
+    end = dt.strftime(d + pd.DateOffset(months=-1), "%Y-%m-%d")  # final period for std
     # recalculate weights
     sipca = dv.loc[begin:end]
     dobs = dg.loc[begin:end]
@@ -228,7 +228,7 @@ def add_cores(cpi:str, end:str, ini: Optional[str]=None) -> None:
         df = pd.DataFrame(data=[aggr_cores],
                           columns=[c.upper() for c in cores_tickers], index=[month]).dropna(axis=1)
         for col in df.columns:
-            add_obs(col, dt.fromisoformat(df.index[0]), 
+            add_obs(col, df.index[0], 
                     df.loc[:, col].values[0])
         
     print(f"Cores for {cpi} and {month} added to the database")

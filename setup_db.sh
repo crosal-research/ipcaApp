@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-date_initial="2014-09-01"    # initial date
+date_initial="2012-09-01"    # initial date
 date_final="2023-01-01"      # final date
 
 case $1 in
@@ -27,7 +27,7 @@ case $1 in
 		echo "DB has alreay been built"
 	    fi
 	fi
-	    # Load series
+	    # build series
 	    echo "Load series..."
 	    python3 -m DB.loaders.series
 	    echo "Done with series"
@@ -35,7 +35,7 @@ case $1 in
 	    sleep 2.0
 
 	    	    #
-	    # load cores
+	    # build cores
 	    echo "Build up core series..."
 	    python3 -m DB.loaders.nucleos_series_add
 	    echo "Done with cores"
