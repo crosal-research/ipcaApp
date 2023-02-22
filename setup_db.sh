@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-date_initial="2012-09-01"    # initial date
+date_initial="2012-01-01"    # initial date
 date_final="2023-01-01"      # final date
 
 case $1 in

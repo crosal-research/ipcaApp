@@ -84,8 +84,8 @@ def fetch_all(kind="VARIACAO", indicator="IPCA",
     fetch all the series for some kind and some indicator. 
     """
 #    date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
-    date_ini = date_ini if date_ini is not None else DATE_INI
 #    date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
+    date_ini = date_ini if date_ini is not None else DATE_INI
     date_end = date_end if date_end is not None else DATE_END
 
     dd = orm.select((o.data, o.value, o.series.ticker) for o in db.Observation
@@ -154,8 +154,11 @@ def fetch_by_ticker(tickers: List[str],
     indicator =[IPCA, IPCA15]
     """
     Utickers = [tck.upper() for tck in tickers]
-    date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
-    date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
+    # date_ini = dt.fromisoformat(date_ini) if date_ini is not None else dt.fromisoformat(DATE_INI)
+    # date_end = dt.fromisoformat(date_end) if date_end is not None else dt.fromisoformat(DATE_END)
+    date_ini = date_ini if date_ini is not None else DATE_INI
+    date_end = date_end if date_end is not None else DATE_END
+ 
     obs = orm.select((o.data, o.value, o.series.ticker)
                      for o in db.Observation 
                      if ((o.series.ticker in Utickers) and 
