@@ -31,9 +31,11 @@ class TableDb(db.Entity):
 
 
 # bootstrap db:
-with open("./configuration.json") as fp:
+import pathlib
+dr = str(pathlib.Path(__file__).parent.resolve())
+
+with open(dr + "/../configuration.json") as fp:
     config = json.load(fp)
-    dr = os.path.abspath("./")
     db.bind(provider=config["DB"]["provider"], 
-             filename= dr + "/DB/storage/" + 'ipca.sqlite', create_db=True)    
+             filename= dr + "/storage/" + 'ipca.sqlite', create_db=True)    
     db.generate_mapping(create_tables=True)    
