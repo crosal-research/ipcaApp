@@ -19,7 +19,7 @@ case $1 in
 	    echo "creating .${dir_name}/DB/storage directory"
 	    sleep 1.0
 	    mkdir "./DB/storage"
-	    python3 "DB/db.by" 
+	    python3 -m "DB.db" 
 	else
 	    if ! [[ -f "${dir_name}/DB/storage/ipca.sqlite" ]]; then
 		python3 -m "DB.db"
@@ -29,27 +29,28 @@ case $1 in
 		echo "DB has alreay been built"
 	    fi
 	fi
-	    # build series
-	    echo "Load series..."
-	    python3 -m "DB.loaders.series"
-	    echo "Done with series"
-	    echo -e "--------\n"
-	    sleep 2.0
+	# build series
+	echo "Load series..."
+	python3 -m "DB.loaders.series"
+	echo "Done with series"
+	echo -e "--------\n"
+	sleep 2.0
 
 	    	    #
-	    # build cores
-	    echo "Build up core series..."
-	    python3 -m "DB.loaders.nucleos_series_add"
-	    echo "Done with cores"
-	    echo -e "--------\n"
+	# build cores
+	echo "Build up core series..."
+	python3 -m "DB.loaders.nucleos_series_add"
+	echo "Done with cores"
+	echo -e "--------\n"
 	    
 
-	    # Create Summary tables
-	    echo "Build up built-in tables..."
-	    python3 -m "DB.loaders.add_tables"
-	    echo "Done with tables"
-	    echo -e "--------\n"
-	    echo "Done with setting up!"
+	# Create Summary tables
+	echo "Build up built-in tables..."
+	python3 -m "DB.loaders.add_tables"
+	echo "Done with tables"
+	echo -e "--------\n"
+	echo "Done with setting up!"
+	exit 0
 	;;
 
     "loads" ) 
@@ -57,6 +58,7 @@ case $1 in
 	echo "Loanding inflation series..."
 	if ! [[ -f "${dir_name}/DB/storage/ipca.sqlite" ]]; then
 	    echo "Database is not available. Build it up first"
+	    exit 1
 	else
 	    # laod inflation series
 	    for inf in "IPCA" "IPCA15"; do
@@ -67,6 +69,7 @@ case $1 in
 		python3 -m "DB.nucleos_calculos" $inf $date_final $date_initial
 	    done
 	    # python3 -m DB.transactions # just in case there is a search machine on
+	    exit 0
 	fi
 	;;
 
