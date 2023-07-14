@@ -2,6 +2,9 @@
 import re, time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import urllib3
+from urllib3.util.ssl_ import create_urllib3_context
+
 
 #import from packages
 import requests
@@ -41,10 +44,18 @@ def _peso_des(description:str):
 # series to be added to database 
 series: list = [] # ex:[ticker:description]
 
+# see: https://github.com/urllib3/urllib3/issues/2653
+ctx = create_urllib3_context()
+ctx.load_default_certs()
+ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
+http = urllib3.PoolManager(ssl_context=ctx)
+
 for t in data.keys():
     kind = len(data[t]) - 1
     url = f"http://api.sidra.ibge.gov.br/desctabapi.aspx?c={t}"
-    html = requests.get(url).content
+    reps = http.request("GET", url)
+    # html = requests.get(url).content
+    html = reps.data
     soup = bs(html,"html.parser")
     group = soup.select("span#lblNomePesquisa")[0].get_text()
 
@@ -112,11 +123,5 @@ for t in data.keys():
 sd = {v[0]:[v[1], v[2], v[3], v[4]] for v in series}
 srs = [[k, sd[k][0], sd[k][1], sd[k][2], sd[k][3]] for k in sd]
 
-# print(f"done fetching {len(srs)} srs information!: {time.time() - t0}")        
-
-t0 = time.time()
-
 with ThreadPoolExecutor() as executor:
      executor.map(lambda s: add_series(*s), srs)
-    
-# print(f"series added to database: {time.time() -t0} secs")    
