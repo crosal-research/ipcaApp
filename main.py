@@ -59,8 +59,8 @@ async def index():
 # fetch resources
 @app.get("/inflation/api/v0.1/")
 async def get_series(tickers: List[str]=Query(..., regex="^.+\..+"),
-                     date_ini:datetime.date=Query(None), #, regex="^\d{4}-\d{2}-\d{2}$"), 
-                     date_end:datetime.date=Query(None), #, regex="^\d{4}-\d{2}-\d{2}$"), 
+                     date_ini:datetime.date=Query(None),
+                     date_end:datetime.date=Query(None),
                      form:str="csv"):
     """Get observations for a List of tickers from database or for table,
     date gives the head lower limit for the for the time seires and
