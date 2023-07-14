@@ -7,7 +7,6 @@ from urllib3.util.ssl_ import create_urllib3_context
 
 
 #import from packages
-import requests
 from bs4 import BeautifulSoup as bs
 
 # import from app
@@ -54,7 +53,6 @@ for t in data.keys():
     kind = len(data[t]) - 1
     url = f"http://api.sidra.ibge.gov.br/desctabapi.aspx?c={t}"
     reps = http.request("GET", url)
-    # html = requests.get(url).content
     html = reps.data
     soup = bs(html,"html.parser")
     group = soup.select("span#lblNomePesquisa")[0].get_text()
