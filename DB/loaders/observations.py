@@ -91,18 +91,9 @@ def _process(urls:List[str]) -> Optional[pd.DataFrame]:
 
     while (attempt <= l):
         try:
-            # with requests.session() as session:
-            #     adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
-            #     session.mount('https://', requests.adapters.HTTPAdapter(
-            #         max_retries=4, pool_connections=4, pool_maxsize=10))
-            
             with urllib3.PoolManager(maxsize=2, ssl_context=ctx) as http:
-                # adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
-                # session.mount('https://', requests.adapters.HTTPAdapter(
-                #     max_retries=4, pool_connections=4, pool_maxsize=10))
                 with Executor(max_workers=2) as e:
-                   # resps = e.map(lambda u: session.get(u, stream=True), urls)
-                    resps = e.map(lambda u: http.request('GET', u, preload_content=True), urls)
+                     resps = e.map(lambda u: http.request('GET', u, preload_content=True), urls)
                 dfs = [_worker_process(resp) for resp in resps]
                 return pd.concat(dfs, axis=0)
  
