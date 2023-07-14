@@ -8,6 +8,8 @@ import re, time
 import json, time
 from typing import Optional, List, Dict
 from concurrent.futures import ThreadPoolExecutor as Executor
+import urllib3
+from urllib3.util.ssl_ import create_urllib3_context
 
 
 # import from packges
@@ -83,16 +85,27 @@ def _process(urls:List[str]) -> Optional[pd.DataFrame]:
     """
     l = 20
     attempt =  0
+    ctx = create_urllib3_context()
+    ctx.load_default_certs()
+    ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
+
     while (attempt <= l):
         try:
-            with requests.session() as session:
-                adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
-                session.mount('https://', requests.adapters.HTTPAdapter(
-                    max_retries=4, pool_connections=4, pool_maxsize=10))
+            # with requests.session() as session:
+            #     adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
+            #     session.mount('https://', requests.adapters.HTTPAdapter(
+            #         max_retries=4, pool_connections=4, pool_maxsize=10))
+            
+            with urllib3.PoolManager(maxsize=2, ssl_context=ctx) as http:
+                # adapter = requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=4)
+                # session.mount('https://', requests.adapters.HTTPAdapter(
+                #     max_retries=4, pool_connections=4, pool_maxsize=10))
                 with Executor(max_workers=2) as e:
-                    resps = e.map(lambda u: session.get(u, stream=True), urls)
+                   # resps = e.map(lambda u: session.get(u, stream=True), urls)
+                    resps = e.map(lambda u: http.request('GET', u, preload_content=True), urls)
                 dfs = [_worker_process(resp) for resp in resps]
                 return pd.concat(dfs, axis=0)
+ 
         except Exception as e:
             print(e)
             print("Data not yet available")
@@ -166,6 +179,6 @@ if __name__ == "__main__":
 
 
     t0=time.time()
-    dg = fetch('IPCA', limit='202211', new=True)
+    dg = fetch('IPCA', limit='202304', new=True)
     t1=time.time()
     print(t1-t0)

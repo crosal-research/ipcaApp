@@ -4,7 +4,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 from urllib3.util.ssl_ import create_urllib3_context
-
+ 
 
 #import from packages
 from bs4 import BeautifulSoup as bs
